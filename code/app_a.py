@@ -11,6 +11,9 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('app_a')
 
+# Повышаем уровень логирования для библиотеки pika
+logging.getLogger('pika').setLevel(logging.WARNING)  # Ставим минимальный уровень WARNINGS
+
 # Настройки подключения к RabbitMQ
 rabbitmq_host = 'rabbitmq'
 queue_name = 'numbers_queue'
@@ -115,6 +118,6 @@ def add_numbers():
 
     return {'result': result}
 
-if __name__ == '__main__':
+if __name0 == '__main__':
     from waitress import serve
     serve(app, host="0.0.0.0", port=8000)  # Запускаем сервер на порту 8000

@@ -1,3 +1,4 @@
+import threading
 import os
 import requests
 import random
@@ -6,7 +7,7 @@ from loguru import logger  # Быстрая библиотека логиров�
 from prometheus_client import Counter, Histogram, make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from flask import Flask  # импортируем Flask
-import sys  # добавляем импорт sys
+import sys  # импортируем sys
 
 # Читаем переменную окружения для частоты запросов
 RATE_PER_SECOND = int(os.getenv('RATE_PER_SECOND', '2'))  # По умолчанию 2 запроса/сек
@@ -29,35 +30,40 @@ app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
     '/metrics': make_wsgi_app()
 })
 
-while True:
-    # Генерация двух случайных чисел
-    num1 = random.randint(1, 100)
-    num2 = random.randint(1, 100)
+# Основная логика генерации запросов
+def generate_and_send_requests():
+    while True:
+        # Генерация двух случайных чисел
+        num1 = random.randint(1, 100)
+        num2 = random.randint(1, 100)
 
-    # Измерение времени начала запроса
-    start_time = time.time()
+        # Измерение времени начала запроса
+        start_time = time.time()
 
-    try:
-        # Выполняем HTTP-запрос
-        response = requests.post(URL, json={"num1": num1, "num2": num2})
-        response.raise_for_status()  # Проверка статуса ответа
+        try:
+            # Выполняем HTTP-запрос
+            response = requests.post(URL, json={"num1": num1, "num2": num2})
+            response.raise_for_status()  # Проверка статуса ответа
 
-        # Измерение времени окончания запроса
-        end_time = time.time()
-        elapsed_time_ms = (end_time - start_time) * 1000  # Преобразование в миллисекунды
+            # Измерение времени окончания запроса
+            end_time = time.time()
+            elapsed_time_ms = (end_time - start_time) * 1000  # Преобразование в миллисекунды
 
-        SOURCE_REQUEST_COUNTER.inc()  # Увеличение счетчика запросов
-        SOURCE_RESPONSE_TIME_HISTOGRAM.observe(elapsed_time_ms / 1000)  # Сбор распределения времени обработки
+            SOURCE_REQUEST_COUNTER.inc()  # Увеличение счетчика запросов
+            SOURCE_RESPONSE_TIME_HISTOGRAM.observe(elapsed_time_ms / 1000)  # Сбор распределения времени обработки
 
-        # Вывод результатов в консоль
-        logger.info(f"Запрос: {num1}+{num2}; Ответ: {response.json().get('result')} ; Время отклика: {elapsed_time_ms:.3f} ms.")
+            # Вывод результатов в консоль
+            logger.info(f"Запрос: {num1}+{num2}; Ответ: {response.json().get('result')} ; Время отклика: {elapsed_time_ms:.3f} ms.")
 
-    except requests.RequestException as e:
-        logger.error(f"Ошибка при выполнении запроса: {e}")
-        continue  # Продолжаем следующий цикл
+        except requests.RequestException as e:
+            logger.error(f"Ошибка при выполнении запроса: {e}")
+            continue  # Продолжаем следующий цикл
 
-    # Задержка между запросами
-    time.sleep(INTERVAL_BETWEEN_REQUESTS)
+        # Задержка между запросами
+        time.sleep(INTERVAL_BETWEEN_REQUESTS)
+
+# Запускаем генерацию запросов в отдельном потоке
+threading.Thread(target=generate_and_send_requests).start()
 
 # Запускаем сервер Flask для экспорта метрик
 if __name__ == "__main__":

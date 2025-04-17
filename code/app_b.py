@@ -1,11 +1,12 @@
+import threading
 import json
 import time
 import pika
 import logging
 from prometheus_client import Counter, Histogram, make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from flask import Flask  # импортируем Flask
 import sys  # импортируем sys
-from flask import Flask  # добавляем импорт Flask
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -91,19 +92,22 @@ def process_message(channel, method, properties, body):
     total_processing_time = time.time() - start_time_total
     logger.info(f"Общее время обработки в приложении Б: {total_processing_time*1000:.3f} ms.")
 
-# Начинаем получать сообщения из очереди numbers_queue
-channel.basic_consume(
-    queue=queue_name,
-    on_message_callback=process_message,
-    auto_ack=True
-)
+# Функция для потребления сообщений из RabbitMQ
+def consume_messages():
+    channel.basic_consume(
+        queue=queue_name,
+        on_message_callback=process_message,
+        auto_ack=True
+    )
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        connection.close()
 
-try:
-    channel.start_consuming()
-except KeyboardInterrupt:
-    pass
-finally:
-    connection.close()
+# Запускаем потребление сообщений в отдельном потоке
+threading.Thread(target=consume_messages).start()
 
 # Запускаем сервер Flask для экспорта метрик
 if __name__ == "__main__":
