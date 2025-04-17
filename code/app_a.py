@@ -4,6 +4,8 @@ import time
 from flask import Flask, request
 import pika
 import logging
+from prometheus_client import Counter, Histogram, make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -15,6 +17,10 @@ queue_name = 'numbers_queue'
 reply_queue_name = 'result_queue'
 TTL_SECONDS = 5  # Срок жизни сообщений в RabbitMQ — 5 секунд
 TIMEOUT_MS = 50  # Таймаут ожидания ответа в миллисекундах
+
+# Prometheus metrics
+REQUEST_COUNTER = Counter('app_a_request_count', 'Количество запросов')
+RESPONSE_TIME_HISTOGRAM = Histogram('app_a_response_time_histogram', 'Распределение времени ответа')
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host))
 channel = connection.channel()
@@ -30,8 +36,14 @@ except pika.exceptions.ChannelClosedByBroker as err:
 
 app = Flask(__name__)
 
+# Добавляем middleware для экспорта метрик
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
+
 @app.route('/add', methods=['POST'])
 def add_numbers():
+    REQUEST_COUNTER.inc()  # Увеличение количества запросов
     start_time_total = time.time()  # Начало общей обработки
 
     data = request.get_json()
@@ -53,7 +65,13 @@ def add_numbers():
     # Открываем канал и слушатель для получения ответа
     with pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host)) as conn:
         ch = conn.channel()
-        ch.queue_declare(queue=reply_queue_name, passive=True, arguments=args)
+
+        # Проверяем наличие очереди, используя пассивный режим
+        try:
+            ch.queue_declare(queue=reply_queue_name, passive=True, arguments=args)
+        except pika.exceptions.ChannelClosedByBroker as err:
+            # Если очередь не существует, объявляем её явно
+            ch.queue_declare(queue=reply_queue_name, arguments=args)
 
         logger.info(f"Отправляется запрос {num1}+{num2} в RabbitMQ...")
 
@@ -88,6 +106,7 @@ def add_numbers():
 
         # Измеряем общее время обработки в приложении А
         total_processing_time = time.time() - start_time_total
+        RESPONSE_TIME_HISTOGRAM.observe(total_processing_time)  # Сбор распределения времени обработки
         logger.info(f"Общее время обработки в приложении А: {total_processing_time*1000:.3f} ms.")
 
         # Измеряем время ожидания ответа
@@ -97,4 +116,5 @@ def add_numbers():
     return {'result': result}
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=8000)  # Запускаем сервер на порту 8000

@@ -3,6 +3,10 @@ import requests
 import random
 import time
 from loguru import logger  # Быстрая библиотека логирования
+from prometheus_client import Counter, Histogram, make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from flask import Flask  # импортируем Flask
+import sys  # добавляем импорт sys
 
 # Читаем переменную окружения для частоты запросов
 RATE_PER_SECOND = int(os.getenv('RATE_PER_SECOND', '2'))  # По умолчанию 2 запроса/сек
@@ -11,8 +15,19 @@ INTERVAL_BETWEEN_REQUESTS = 1 / RATE_PER_SECOND
 # Адрес сервера App A
 URL = 'http://app_a:8000/add'
 
-# Настройка логгера Loguru
-#logger.add("request_log.log", rotation="1 day", retention="1 week", enqueue=True)
+# Prometheus metrics
+SOURCE_REQUEST_COUNTER = Counter('source_request_count', 'Количество запросов от источника')
+SOURCE_RESPONSE_TIME_HISTOGRAM = Histogram('source_response_time_histogram', 'Распределение времени ответа')
+
+# Настройка логгера Loguru только для консольного вывода
+logger.remove()  # Убираем предыдущие обработчики
+logger.add(sys.stdout, colorize=True, format="{time} {level} {message}", backtrace=True, diagnose=True)
+
+# Flask-приложение для экспорта метрик
+app = Flask(__name__)
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
 
 while True:
     # Генерация двух случайных чисел
@@ -31,7 +46,10 @@ while True:
         end_time = time.time()
         elapsed_time_ms = (end_time - start_time) * 1000  # Преобразование в миллисекунды
 
-        # Вывод результатов в консоль и лог
+        SOURCE_REQUEST_COUNTER.inc()  # Увеличение счетчика запросов
+        SOURCE_RESPONSE_TIME_HISTOGRAM.observe(elapsed_time_ms / 1000)  # Сбор распределения времени обработки
+
+        # Вывод результатов в консоль
         logger.info(f"Запрос: {num1}+{num2}; Ответ: {response.json().get('result')} ; Время отклика: {elapsed_time_ms:.3f} ms.")
 
     except requests.RequestException as e:
@@ -40,3 +58,8 @@ while True:
 
     # Задержка между запросами
     time.sleep(INTERVAL_BETWEEN_REQUESTS)
+
+# Запускаем сервер Flask для экспорта метрик
+if __name__ == "__main__":
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5001)  # Запускаем сервер на порту 5001

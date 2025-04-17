@@ -2,6 +2,10 @@ import json
 import time
 import pika
 import logging
+from prometheus_client import Counter, Histogram, make_wsgi_app
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+import sys  # импортируем sys
+from flask import Flask  # добавляем импорт Flask
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -12,6 +16,10 @@ rabbitmq_host = 'rabbitmq'
 queue_name = 'numbers_queue'
 reply_queue_name = 'result_queue'
 MAX_MESSAGE_AGE = 1  # Максимально допустимый возраст сообщения — 1 секунда
+
+# Prometheus metrics
+MESSAGE_PROCESSING_COUNTER = Counter('app_b_message_processing_count', 'Количество обработанных сообщений')
+PROCESSING_TIME_HISTOGRAM = Histogram('app_b_processing_time_histogram', 'Распределение времени обработки сообщений')
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host))
 channel = connection.channel()
@@ -25,7 +33,14 @@ except pika.exceptions.ChannelClosedByBroker as err:
     logger.error(f"Ошибка объявления очереди: {err}. Удалите очереди и попробуйте снова.")
     exit(1)
 
+# Flask-приложение для экспорта метрик
+app = Flask(__name__)
+app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
+    '/metrics': make_wsgi_app()
+})
+
 def process_message(channel, method, properties, body):
+    MESSAGE_PROCESSING_COUNTER.inc()  # Увеличение счетчика обработанных сообщений
     start_time_total = time.time()  # Начало общей обработки
 
     message = json.loads(body)
@@ -52,6 +67,7 @@ def process_message(channel, method, properties, body):
     operation_start_time = time.time()
     result = message['num1'] + message['num2']
     operation_end_time = time.time()
+    PROCESSING_TIME_HISTOGRAM.observe(operation_end_time - start_time_receive)  # Коллекция времени обработки
     logger.info(f"Операция сложения выполнена за {(operation_end_time - operation_start_time)*1000:.3f} ms.")
 
     # Готовим ответ
@@ -88,3 +104,8 @@ except KeyboardInterrupt:
     pass
 finally:
     connection.close()
+
+# Запускаем сервер Flask для экспорта метрик
+if __name__ == "__main__":
+    from waitress import serve
+    serve(app, host="0.0.0.0", port=5000)  # Запускаем сервер на порту 5000

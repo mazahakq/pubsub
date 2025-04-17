@@ -7,6 +7,20 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  prometheus:
+    image: prom/prometheus:v2.34.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus/:/etc/prometheus/  # Скопируем конфигурацию Prometheus
+      - prometheus-data:/prometheus  # Данные Prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus/'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"  # Порт Prometheus
+
   app_a:
     image: apppubsub:master
     build: .
@@ -26,6 +40,8 @@ services:
     entrypoint: ["python", "app_b.py"]
     depends_on:
       - rabbitmq
+    ports:
+      - "5000:5000"  # Порт приложения Б
     volumes:
       - ./code:/code
 
@@ -38,5 +54,10 @@ services:
       - RATE_PER_SECOND=50  # Можно менять по своему усмотрению
     depends_on:
       - app_a
+    ports:
+      - "5001:5001"  # Порт источника запросов
     volumes:
       - ./code:/code
+
+volumes:
+  prometheus-data:
