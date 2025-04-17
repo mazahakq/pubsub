@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  app_a:
+    image: apppubsub:master
+    build: .
+    container_name: app_a
+    entrypoint: ["python", "app_a.py"]
+    depends_on:
+      - rabbitmq
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./code:/code
+
+  app_b:
+    image: apppubsub:master
+    build: .
+    container_name: app_b
+    entrypoint: ["python", "app_b.py"]
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./code:/code
+
+  source_app:
+    image: apppubsub:master
+    build: .
+    container_name: source_app
+    entrypoint: ["python", "source_app.py"]
+    depends_on:
+      - app_a
+    volumes:
+      - ./code:/code
