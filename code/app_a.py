@@ -118,6 +118,6 @@ def add_numbers():
 
     return {'result': result}
 
-if __name0 == '__main__':
+if __name__ == '__main__':
     from waitress import serve
     serve(app, host="0.0.0.0", port=8000)  # Запускаем сервер на порту 8000

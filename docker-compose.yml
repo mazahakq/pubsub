@@ -21,6 +21,16 @@ services:
     ports:
       - "9090:9090"  # Порт Prometheus
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"  # Порт Grafana
+    volumes:
+      - grafana-data:/var/lib/grafana  # Хранение данных Grafana
+      - ./dashboards:/etc/grafana/provisioning/dashboards  # Импорт дашбордов
+      - ./datasources:/etc/grafana/provisioning/datasources  # Настройки Data Sources
+
   app_a:
     image: apppubsub:master
     build: .
@@ -61,3 +71,4 @@ services:
 
 volumes:
   prometheus-data:
+  grafana-data:
