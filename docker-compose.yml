@@ -34,6 +34,8 @@ services:
     build: .
     container_name: source_app
     entrypoint: ["python", "source_app.py"]
+    environment:
+      - RATE_PER_SECOND=50  # Можно менять по своему усмотрению
     depends_on:
       - app_a
     volumes:
