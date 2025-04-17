@@ -12,7 +12,7 @@ INTERVAL_BETWEEN_REQUESTS = 1 / RATE_PER_SECOND
 URL = 'http://app_a:8000/add'
 
 # Настройка логгера Loguru
-logger.add("request_log.log", rotation="1 day", retention="1 week", enqueue=True)
+#logger.add("request_log.log", rotation="1 day", retention="1 week", enqueue=True)
 
 while True:
     # Генерация двух случайных чисел
