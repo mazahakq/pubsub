@@ -25,7 +25,10 @@ services:
       - "9090:9090"  # Порт Prometheus
 
   grafana:
-    image: grafana/grafana:9.5.21
+    image: grafana/grafana:9.5.21-plugins
+    build:
+      context: .
+      dockerfile: grafana.Dockerfile
     container_name: grafana
     ports:
       - "3000:3000"  # Порт Grafana
@@ -41,6 +44,12 @@ services:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "7000:7000"
+
+  influxdb:
+    image: influxdb:1.8.10
+    container_name: influxdb
+    volumes:
+      - influxdb-data:/var/lib/influxdb
 
   app_a:
     image: apppubsub:master
@@ -75,6 +84,8 @@ services:
     build: .
     container_name: source_app
     entrypoint: ["python", "source_app.py"]
+    profiles:
+      - test
     environment:
       - SERVER_ADDRESS=http://haproxy:8000
       - RATE_PER_SECOND=100
@@ -82,9 +93,25 @@ services:
       replicas: 1
     depends_on:
       - app_a
+      - haproxy
     volumes:
       - ./code:/code
+
+  source_app_k6:
+    build:
+      context: .
+      dockerfile: k6.Dockerfile
+    container_name: source_app_k6
+    environment:
+      - SERVER_ADDRESS=http://haproxy:8000
+    depends_on:
+      - app_a
+      - haproxy
+    command: run --out influxdb=http://influxdb:8086/k6db /usr/src/app/source_app.js 
+    volumes:
+      - ./code:/usr/src/app
 
 volumes:
   prometheus-data:
   grafana-data:
+  influxdb-data:
