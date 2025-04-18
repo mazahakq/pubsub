@@ -31,15 +31,25 @@ services:
       - ./dashboards:/etc/grafana/provisioning/dashboards  # Импорт дашбордов
       - ./datasources:/etc/grafana/provisioning/datasources  # Настройки Data Sources
 
+  haproxy:
+    image: haproxy:2.7
+    container_name: haproxy
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "7000:7000"
+
   app_a:
     image: apppubsub:master
     build: .
     container_name: app_a
     entrypoint: ["python", "app_a.py"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    deploy:
+      replicas: 1
     depends_on:
       - rabbitmq
-    ports:
-      - "8000:8000"
     volumes:
       - ./code:/code
 
@@ -48,10 +58,12 @@ services:
     build: .
     container_name: app_b
     entrypoint: ["python", "app_b.py"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
     depends_on:
       - rabbitmq
-    ports:
-      - "5000:5000"  # Порт приложения Б
+    deploy:
+      replicas: 1
     volumes:
       - ./code:/code
 
@@ -61,11 +73,12 @@ services:
     container_name: source_app
     entrypoint: ["python", "source_app.py"]
     environment:
-      - RATE_PER_SECOND=50  # Можно менять по своему усмотрению
+      - SERVER_ADDRESS=http://haproxy:8000
+      - RATE_PER_SECOND=100
+    deploy:
+      replicas: 1
     depends_on:
       - app_a
-    ports:
-      - "5001:5001"  # Порт источника запросов
     volumes:
       - ./code:/code
 

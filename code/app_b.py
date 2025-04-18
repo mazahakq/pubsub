@@ -6,14 +6,18 @@ import logging
 from prometheus_client import Counter, Histogram, make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 from flask import Flask  # импортируем Flask
-import sys  # импортируем sys
+import os
+
+#API
+API_ADDRESS = os.getenv('API_ADDRESS', '0.0.0.0')
+API_PORT = int(os.getenv('API_PORT', 5000))
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('app_b')
 
 # Настройки подключения к RabbitMQ
-rabbitmq_host = 'rabbitmq'
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
 queue_name = 'numbers_queue'
 reply_queue_name = 'result_queue'
 MAX_MESSAGE_AGE = 1  # Максимально допустимый возраст сообщения — 1 секунда
@@ -112,4 +116,4 @@ threading.Thread(target=consume_messages).start()
 # Запускаем сервер Flask для экспорта метрик
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host="0.0.0.0", port=5000)  # Запускаем сервер на порту 5000
+    serve(app, host=API_ADDRESS, port=API_PORT)  # Запускаем сервер на порту 5000

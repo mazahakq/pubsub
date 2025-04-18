@@ -13,8 +13,13 @@ import sys  # импортируем sys
 RATE_PER_SECOND = int(os.getenv('RATE_PER_SECOND', '2'))  # По умолчанию 2 запроса/сек
 INTERVAL_BETWEEN_REQUESTS = 1 / RATE_PER_SECOND
 
+#API
+API_ADDRESS = os.getenv('API_ADDRESS', '0.0.0.0')
+API_PORT = int(os.getenv('API_PORT', 5001))
+
 # Адрес сервера App A
-URL = 'http://app_a:8000/add'
+SERVER_ADDRESS = os.getenv('SERVER_ADDRESS', 'http://app_a:8000')
+URL = SERVER_ADDRESS + '/add'
 
 # Prometheus metrics
 SOURCE_REQUEST_COUNTER = Counter('source_request_count', 'Количество запросов от источника')
@@ -68,4 +73,4 @@ threading.Thread(target=generate_and_send_requests).start()
 # Запускаем сервер Flask для экспорта метрик
 if __name__ == "__main__":
     from waitress import serve
-    serve(app, host="0.0.0.0", port=5001)  # Запускаем сервер на порту 5001
+    serve(app, host=API_ADDRESS, port=API_PORT)  # Запускаем сервер на порту

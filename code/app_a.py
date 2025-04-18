@@ -6,6 +6,11 @@ import pika
 import logging
 from prometheus_client import Counter, Histogram, make_wsgi_app
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
+import os
+
+#API
+API_ADDRESS = os.getenv('API_ADDRESS', '0.0.0.0')
+API_PORT = int(os.getenv('API_PORT', 8000))
 
 # Настройка логирования
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -15,7 +20,7 @@ logger = logging.getLogger('app_a')
 logging.getLogger('pika').setLevel(logging.WARNING)  # Ставим минимальный уровень WARNINGS
 
 # Настройки подключения к RabbitMQ
-rabbitmq_host = 'rabbitmq'
+rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
 queue_name = 'numbers_queue'
 reply_queue_name = 'result_queue'
 TTL_SECONDS = 5  # Срок жизни сообщений в RabbitMQ — 5 секунд
@@ -120,4 +125,4 @@ def add_numbers():
 
 if __name__ == '__main__':
     from waitress import serve
-    serve(app, host="0.0.0.0", port=8000)  # Запускаем сервер на порту 8000
+    serve(app, host=API_ADDRESS, port=API_PORT)  # Запускаем сервер на порту
