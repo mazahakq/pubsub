@@ -70,6 +70,8 @@ services:
     build: .
     container_name: app_b
     entrypoint: ["python", "app_b.py"]
+    profiles:
+      - python_b
     environment:
       - RABBITMQ_HOST=rabbitmq
     depends_on:
@@ -104,6 +106,8 @@ services:
     container_name: source_app_k6
     environment:
       - SERVER_ADDRESS=http://haproxy:8000
+    profiles:
+      - test_k6
     depends_on:
       - app_a
       - haproxy
