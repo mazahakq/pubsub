@@ -34,10 +34,11 @@ connection = pika.BlockingConnection(pika.ConnectionParameters(rabbitmq_host))
 channel = connection.channel()
 
 # Создаем очереди с параметрами TTL
-args = {"x-message-ttl": TTL_SECONDS * 1000}  # TTL в миллисекундах
+#args = {"x-message-ttl": TTL_SECONDS * 1000}  # TTL в миллисекундах
+args = {}
 try:
-    channel.queue_declare(queue=queue_name, arguments=args)
-    channel.queue_declare(queue=reply_queue_name, arguments=args)
+    channel.queue_declare(queue=queue_name, durable=True, arguments=args)
+    channel.queue_declare(queue=reply_queue_name, durable=True, arguments=args)
 except pika.exceptions.ChannelClosedByBroker as err:
     logger.error(f"Ошибка объявления очереди: {err}. Удалите очереди и попробуйте снова.")
     exit(1)

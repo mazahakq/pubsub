@@ -44,6 +44,7 @@ services:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     ports:
       - "7000:7000"
+      - "8000:8000"
 
   influxdb:
     image: influxdb:1.8.10
