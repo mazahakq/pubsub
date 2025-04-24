@@ -81,3 +81,13 @@ http://localhost:8080/ - Kafka-ui
 http://localhost:15672/ - RabbitMQ (guest/guest)
 http://localhost:8081/ - Flink
 ```
+
+Пример запроса в приложение А через curl:  
+```
+curl --location 'http://localhost:8000/add' \
+--header 'Content-Type: application/json' \
+--data '{
+    "num1": 3,
+    "num2": 200
+}'
+```
