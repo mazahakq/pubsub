@@ -1,0 +1,29 @@
+jobmanager.memory.process.size: 1600Mb
+jobmanager.rpc.address: jobmanager
+rest.port: 8081
+blob.server.port: 6124
+query.server.port: 6125
+
+taskmanager.memory.process.size: 4000Mb
+taskmanager.numberOfTaskSlots: 10
+
+high-availability: zookeeper
+high-availability.storageDir: file:///mnt/ha
+high-availability.zookeeper.quorum: zookeeper
+high-availability.zookeeper.client.acl: open
+
+state.backend: rocksdb
+state.checkpoints.dir: file:///mnt/flink-checkpoints-directory
+state.savepoints.dir: file:///mnt/flink-savepoints-directory
+high-availability.zookeeper.quorum: zookeeper
+high-availability.zookeeper.client.acl: open
+
+heartbeat.interval: 1000
+heartbeat.timeout: 5000
+
+rest.flamegraph.enabled: true
+web.backpressure.refresh-interval: 10000
+
+metrics.reporters: prom
+metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+metrics.reporter.prom.port: 9250

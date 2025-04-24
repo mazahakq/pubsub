@@ -1,0 +1,57 @@
+version: '3.8'
+services:
+  jobmanager:
+    build:
+      context: docker
+      dockerfile: flink.Dockerfile
+    container_name: jobmanager
+    depends_on:
+      - zookeeper
+    command: "jobmanager.sh start-foreground"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    ports:
+      - 8081:8081
+    volumes:
+      - ./flink/jobmanager/conf:/opt/flink/conf
+      - flink-data:/mnt
+
+  taskmanager_1:
+    build:
+      context: docker
+      dockerfile: flink.Dockerfile
+    container_name: taskmanager_1
+    depends_on:
+      - jobmanager
+      - zookeeper
+    command: "taskmanager.sh start-foreground"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    volumes:
+      - ./flink/taskmanager/conf/:/opt/flink/conf
+      - flink-data:/mnt
+
+  taskmanager_2:
+    build:
+      context: docker
+      dockerfile: flink.Dockerfile
+    container_name: taskmanager_2
+    depends_on:
+      - jobmanager
+      - zookeeper
+    command: "taskmanager.sh start-foreground"
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+    volumes:
+      - ./flink/taskmanager/conf/:/opt/flink/conf
+      - flink-data:/mnt
+
+  zookeeper:
+    image: zookeeper:3.9.2
+    container_name: zookeeper
+    volumes:
+      - zookeeper-data:/data
+
+volumes:
+  flink-data:
+  zookeeper-data:

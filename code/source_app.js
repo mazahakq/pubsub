@@ -17,9 +17,9 @@ export let options = {
 };
 
 export default function () {
-  // Генерируем случайные числа между 1 и 100 средствами стандартного JS
-  const num1 = Math.floor(Math.random() * 100) + 1;
-  const num2 = Math.floor(Math.random() * 100) + 1;
+  // Генерируем случайные числа между 1 и 10000 средствами стандартного JS
+  const num1 = Math.floor(Math.random() * 10000) + 1;
+  const num2 = Math.floor(Math.random() * 10000) + 1;
 
   const payload = JSON.stringify({ num1, num2 });
 

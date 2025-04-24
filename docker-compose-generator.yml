@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  app_kafka_gen:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: app_kafka_gen
+    entrypoint: ["python", "app_kafka_gen.py"]
+    profiles:
+      - kafka_python
+    environment:
+      - KAFKA_HOST=kafka:9092
+    deploy:
+      replicas: 1
+    volumes:
+      - ./code:/code
+
+  source_app:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: source_app
+    entrypoint: ["python", "source_app.py"]
+    profiles:
+      - source_python
+    environment:
+      - SERVER_ADDRESS=http://haproxy:8000
+      - RATE_PER_SECOND=100
+    deploy:
+      replicas: 1
+    volumes:
+      - ./code:/code
+
+  source_app_k6:
+    build:
+      context: docker
+      dockerfile: k6.Dockerfile
+    container_name: source_app_k6
+    environment:
+      - SERVER_ADDRESS=http://haproxy:8000
+    profiles:
+      - source_k6
+    command: run --out influxdb=http://influxdb:8086/k6db /usr/src/app/source_app.js 
+    volumes:
+      - ./code:/usr/src/app
