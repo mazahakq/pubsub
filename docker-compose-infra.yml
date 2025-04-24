@@ -55,6 +55,8 @@ services:
   kafka:
     image: docker.io/bitnami/kafka:3.9.0
     container_name: kafka
+    depends_on:
+      - kafka-zookeeper
     ports:
       - "9092:9092"
     volumes:

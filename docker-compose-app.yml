@@ -11,8 +11,6 @@ services:
       - RABBITMQ_HOST=rabbitmq
     deploy:
       replicas: 1
-    depends_on:
-      - rabbitmq
     volumes:
       - ./code:/code
 
@@ -27,8 +25,6 @@ services:
       - python_b
     environment:
       - RABBITMQ_HOST=rabbitmq
-    depends_on:
-      - rabbitmq
     deploy:
       replicas: 1
     volumes:

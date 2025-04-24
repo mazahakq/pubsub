@@ -11,8 +11,6 @@ services:
       - kafka_python
     environment:
       - KAFKA_HOST=kafka:9092
-    depends_on:
-      - kafka
     deploy:
       replicas: 1
     volumes:
@@ -32,9 +30,6 @@ services:
       - RATE_PER_SECOND=100
     deploy:
       replicas: 1
-    depends_on:
-      - app_a
-      - haproxy
     volumes:
       - ./code:/code
 
@@ -47,9 +42,6 @@ services:
       - SERVER_ADDRESS=http://haproxy:8000
     profiles:
       - source_k6
-    depends_on:
-      - app_a
-      - haproxy
     command: run --out influxdb=http://influxdb:8086/k6db /usr/src/app/source_app.js 
     volumes:
       - ./code:/usr/src/app
