@@ -24,7 +24,7 @@ rabbitmq_host = os.getenv('RABBITMQ_HOST', 'localhost')
 queue_name = 'numbers_queue'
 reply_queue_name = 'result_queue'
 TTL_SECONDS = 5  # Срок жизни сообщений в RabbitMQ — 5 секунд
-TIMEOUT_MS = 50  # Таймаут ожидания ответа в миллисекундах
+TIMEOUT_MS = 200  # Таймаут ожидания ответа в миллисекундах
 
 # Prometheus metrics
 REQUEST_COUNTER = Counter('app_a_request_count', 'Количество запросов')
@@ -102,12 +102,17 @@ def add_numbers():
                 if body:
                     received_data = json.loads(body)
                     if received_data.get('corr_id') == corr_id:
-                        return received_data['result'], time.time()  # Вернем ответ и время получения
+                        guid = ""
+                        try:
+                            guid = received_data['guid']
+                        except KeyError:
+                            guid = "KeyError"
+                        return received_data['result'], guid, time.time()  # Вернем ответ и время получения
                 time.sleep(0.01)  # Небольшая пауза между проверками
-            return None, None  # Таймаут превышен
+            return None, None, None  # Таймаут превышен
 
         # Ждём ответа с таймаутом
-        result, receive_time = wait_for_response(corr_id, TIMEOUT_MS)
+        result, guid, receive_time = wait_for_response(corr_id, TIMEOUT_MS)
 
         if result is None:
             logger.warning("Таймаут ожидания ответа истек.")
@@ -122,7 +127,7 @@ def add_numbers():
         waiting_time = receive_time - send_end_time
         logger.info(f"Время ожидания ответа из приложения Б: {waiting_time*1000:.3f} ms.")
 
-    return {'result': result}
+    return {'result': result, 'guid': guid}
 
 if __name__ == '__main__':
     from waitress import serve

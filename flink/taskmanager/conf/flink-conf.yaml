@@ -1,6 +1,6 @@
 jobmanager.memory.process.size: 1600Mb
 jobmanager.rpc.address: jobmanager
-rest.port: 8080
+rest.port: 8081
 blob.server.port: 6124
 query.server.port: 6125
 

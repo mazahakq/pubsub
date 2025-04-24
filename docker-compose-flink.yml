@@ -2,7 +2,7 @@ version: '3.8'
 services:
   jobmanager:
     build:
-      context: .
+      context: docker
       dockerfile: flink.Dockerfile
     container_name: jobmanager
     depends_on:
@@ -11,14 +11,14 @@ services:
     environment:
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
     ports:
-      - 8080:8080
+      - 8081:8081
     volumes:
       - ./flink/jobmanager/conf:/opt/flink/conf
       - flink-data:/mnt
 
   taskmanager_1:
     build:
-      context: .
+      context: docker
       dockerfile: flink.Dockerfile
     container_name: taskmanager_1
     depends_on:
@@ -33,7 +33,7 @@ services:
 
   taskmanager_2:
     build:
-      context: .
+      context: docker
       dockerfile: flink.Dockerfile
     container_name: taskmanager_2
     depends_on:

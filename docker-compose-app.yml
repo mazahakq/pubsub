@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  app_a:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: app_a
+    entrypoint: ["python", "app_a.py"]
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    deploy:
+      replicas: 1
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./code:/code
+
+  app_b:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: app_b
+    entrypoint: ["python", "app_b.py"]
+    profiles:
+      - python_b
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+    deploy:
+      replicas: 1
+    volumes:
+      - ./code:/code
+

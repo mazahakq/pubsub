@@ -39,8 +39,8 @@ app.wsgi_app = DispatcherMiddleware(app.wsgi_app, {
 def generate_and_send_requests():
     while True:
         # Генерация двух случайных чисел
-        num1 = random.randint(1, 100)
-        num2 = random.randint(1, 100)
+        num1 = random.randint(1, 10000)
+        num2 = random.randint(1, 10000)
 
         # Измерение времени начала запроса
         start_time = time.time()
