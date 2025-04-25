@@ -19,6 +19,8 @@ prometheus - Конфигурации prometheus
 ```
 app_a.py - Приложение на python реализующее логику app_a
 app_b.py - Приложение на python реализующее логику app_b
+app_a_rpc.py - Приложение на python реализующее логику app_a через rpc взаимодействие
+app_b_rpc.py - Приложение на python реализующее логику app_b через rpc взаимодействие
 ```
 
 Приложения FLINK:  
@@ -60,11 +62,17 @@ docker-compose -f docker-compose-infra.yml up -d
 #Развертываем Flink в случае тестирования flink приложений
 docker-compose -f docker-compose-flink.yml up -d
 
-#Развертываем приложений
-docker-compose -f docker-compose-app.yml up -d
+#Развертываем приложений app_a.py
+docker-compose -f docker-compose-app.yml --profile python_a  up -d
 
 #Развертываем приложения app_b.py
 docker-compose -f docker-compose-app.yml --profile python_b  up -d
+
+#Развертываем приложений app_a_rpc.py
+docker-compose -f docker-compose-app.yml --profile python_rpc_a  up -d
+
+#Развертываем приложения app_b_rpc.py
+docker-compose -f docker-compose-app.yml --profile python_rpc_b  up -d
 
 #Развертываем генераторов нагрузки
 docker-compose -f docker-compose-generator.yml --profile kafka_python  up -d
@@ -80,6 +88,7 @@ http://localhost:9090/ - Prometheus
 http://localhost:8080/ - Kafka-ui
 http://localhost:15672/ - RabbitMQ (guest/guest)
 http://localhost:8081/ - Flink
+http://localhost:7000/stats - Haproxy Stats
 ```
 
 Пример запроса в приложение А через curl:  

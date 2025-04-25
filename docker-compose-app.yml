@@ -7,6 +7,8 @@ services:
       dockerfile: app.Dockerfile
     container_name: app_a
     entrypoint: ["python", "app_a.py"]
+    profiles:
+      - python_a
     environment:
       - RABBITMQ_HOST=rabbitmq
     deploy:
@@ -30,3 +32,30 @@ services:
     volumes:
       - ./code:/code
 
+  app_a_rpc:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: app_a_rpc
+    entrypoint: ["python", "app_a_rpc.py"]
+    profiles:
+      - python_rpc_a
+    deploy:
+      replicas: 1
+    volumes:
+      - ./code:/code
+
+  app_b_rpc:
+    image: apppubsub:master
+    build:
+      context: docker
+      dockerfile: app.Dockerfile
+    container_name: app_b_rpc
+    entrypoint: ["python", "app_b_rpc.py"]
+    profiles:
+      - python_rpc_b
+    deploy:
+      replicas: 1
+    volumes:
+      - ./code:/code
